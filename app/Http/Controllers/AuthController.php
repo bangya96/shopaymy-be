@@ -12,24 +12,33 @@ class AuthController extends Controller
 {
     public function register(Request $request)
     {
-        $request->validate([
-            'name' => 'required|string|max:255',
-            'email' => 'required|string|email|max:255|unique:users',
-            'password' => 'required|string|min:8|confirmed',
-        ]);
+        try {
+            $request->validate([
+                'name' => 'required|string|max:255',
+                'email' => 'required|string|email|max:255|unique:users',
+                'password' => 'required|string|min:8|confirmed',
+            ]);
 
-        $user = User::create([
-            'name' => $request->name,
-            'email' => $request->email,
-            'password' => Hash::make($request->password),
-        ]);
+            $user = User::create([
+                'name' => $request->name,
+                'email' => $request->email,
+                'password' => Hash::make($request->password),
+            ]);
 
-        $token = $user->createToken('auth-token')->plainTextToken;
+            $token = $user->createToken('auth-token')->plainTextToken;
 
-        return response()->json([
-            'token' => $token,
-            'user' => $user
-        ], 201);
+            return response()->json([
+                'token' => $token,
+                'user' => $user
+            ], 201);
+        } catch (ValidationException $e) {
+            if (isset($e->errors()['email'])) {
+                return response()->json([
+                    'message' => 'Email already exists'
+                ], 422);
+            }
+            throw $e;
+        }
     }
 
     public function login(Request $request)
